@@ -1,0 +1,8 @@
+{
+ "uuid": "headphone-indicator@mengzhuo.org",
+ "shell-version": ["3.4"],
+ "name": "Headphone Indicator",
+ "url":  "https://github.com/mengzhuo/gnome-shell-headphone-indicator",
+ "description": "Indicator for headphone status and this will auto mute playing songs while headphone got unplug by    accident",
+ "settings-schema":"org.gnome.shell.extensions.headphone-indicator"
+}

@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="14"
+   height="14"
+   id="svg3099"
+   version="1.1"
+   inkscape:version="0.48.3.1 r9886"
+   sodipodi:docname="headphone-indicator-symbolic.svg">
+  <defs
+     id="defs3101" />
+  <sodipodi:namedview
+     id="base"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageopacity="0.0"
+     inkscape:pageshadow="2"
+     inkscape:zoom="16.8125"
+     inkscape:cx="1.1332879"
+     inkscape:cy="9.4272265"
+     inkscape:current-layer="layer1"
+     showgrid="true"
+     inkscape:grid-bbox="true"
+     inkscape:document-units="px"
+     inkscape:window-width="1280"
+     inkscape:window-height="744"
+     inkscape:window-x="0"
+     inkscape:window-y="27"
+     inkscape:window-maximized="1"
+     fit-margin-top="0"
+     fit-margin-left="0"
+     fit-margin-right="0"
+     fit-margin-bottom="0" />
+  <metadata
+     id="metadata3104">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title />
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     id="layer1"
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     transform="translate(-0.17526206,-17.455712)">
+    <path
+       style="fill:#ffffff;fill-opacity:0.96391757000000000;stroke:#000000;stroke-width:0.4;stroke-miterlimit:4;stroke-opacity:0.93298974000000001;stroke-dasharray:none"
+       d="m 2.3124513,30.639558 c 0,-0.379328 -0.2684932,-0.657605 -0.8210157,-0.850929 -0.74075116,-0.259185 -0.82101565,-0.402861 -0.82101565,-1.469616 0,-1.066755 0.0802645,-1.210429 0.82101565,-1.469613 0.5525225,-0.193323 0.8210157,-0.471602 0.8210157,-0.850932 0,-0.443165 0.1755112,-0.56366 0.8210174,-0.56366 l 1.3837298,0 0,2.884205 0,2.884209 -1.3837298,0 c -0.6455062,0 -0.8210174,-0.120494 -0.8210174,-0.563664 z m 7.7136507,-2.320545 0,-2.884205 1.317529,0 c 0.645506,0 0.821016,0.120493 0.821016,0.56366 0,0.37933 0.268494,0.657609 0.821016,0.850932 0.740751,0.259184 0.821016,0.402858 0.821016,1.469613 0,1.066755 -0.08026,1.210431 -0.821016,1.469616 -0.552522,0.193324 -0.821016,0.471601 -0.821016,0.850929 0,0.44317 -0.17551,0.563664 -0.821016,0.563664 l -1.317529,0 z M 0.85286688,26.075741 C 0.51480279,25.736425 0.66697657,23.041494 1.0925673,21.830772 c 0.84926,-2.41598 3.1027958,-3.812497 6.1521583,-3.812497 4.1385624,0 6.7386364,2.643996 6.5085644,6.618508 -0.121288,2.095236 -1.129928,2.218287 -1.137747,0.133988 -0.0071,-1.882484 -0.288302,-3.168248 -1.378173,-4.02872 -0.677827,-0.535153 -1.118494,-1.075656 -3.9988209,-1.075656 -2.8803257,0 -2.7913792,0.335128 -3.4692071,0.870284 -1.0841554,0.855956 -1.9338141,2.28408 -1.9408878,4.142743 -0.00556,1.461833 -0.5182362,1.855367 -0.97558732,1.396321 z"
+       id="path3086"
+       inkscape:connector-curvature="0"
+       sodipodi:nodetypes="sssssscccssccsssssssccssssssssss" />
+  </g>
+</svg>

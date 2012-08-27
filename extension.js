@@ -160,6 +160,7 @@ const Indicator = new Lang.Class({
         this._onDestroy();
     },
     _onDestroy: function() {
+        this.actor.hide();
         this._jack.destroy();
         this._player.destroy();
     }

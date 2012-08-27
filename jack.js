@@ -29,6 +29,16 @@ const LOW_SENSITIVE_TIMEOUT  = 1500; //pulgged is not an urgent task.
 const CardInfoCommandLine = 'amixer -c0 contents'; // XXX: on card 1 since most of laptop has only one sound card.
 const HeadPhoneJACK       = 'Headphone Jack';
 const ONFlag              = '=on';
+const JackInfoCommandLine = 'amixer -c0 cget numid=%s';
+
+/*
+* FIXME
+* There is an undocumented way, which can't find in man or help but written in the source code,
+* to monitor the events of amixer(like jack plugged)
+* which saves huge amount of CPU resources.
+* But I can't read standard output of it or run it as daemon, any help?
+* const AmixerEventsCommandLine = 'amixer events';
+*/
 
 const BLACK_LIST_KEY_NAME = 'blacklist';
 
@@ -80,7 +90,7 @@ const HeadPhoneJack = new Lang.Class({
                     
                     if ( id > 0 ){ //remove none item
                     
-                        this._jackNumIDList.push({ command:'amixer cget numid=%s'.format(id),
+                        this._jackNumIDList.push({ command: JackInfoCommandLine.format(id),
                                                     description:description,
                                                     id:id
                         });
@@ -95,10 +105,14 @@ const HeadPhoneJack = new Lang.Class({
                 throw new Error('No Jack port founded');
             
             delete this._cardDevices; // save some RAM 
-             
+            
+            this.status = Status.OUT; //First guess
+            
+            this._onSettingsChanged();
+            
             this._update();
             
-            this._mainLoopID = Mainloop.timeout_add(1000, Lang.bind(this, this._update)); 
+            this._mainLoopID = Mainloop.timeout_add(LOW_SENSITIVE_TIMEOUT, Lang.bind(this, this._update)); 
         }
         catch(e) {
             this.status = Status.NONEXIST;
@@ -106,54 +120,64 @@ const HeadPhoneJack = new Lang.Class({
         }
     },
     _onSettingsChanged : function (){
-        this.blackList = this._settings.get_strv(BLACK_LIST_KEY_NAME);
+        try {
+            this.blackList = this._settings.get_strv(BLACK_LIST_KEY_NAME);
+            this._updateList = new Array;
+            for (let i in this._jackNumIDList){
+                if ( this.blackList.indexOf(this._jackNumIDList[i].id) == -1){
+                    this._updateList.push(this._jackNumIDList[i].id);
+                }
+            }
+        }
+        catch(e){
+            throw new Error('[HeadPhone Jack]'+e.message);
+        }
     },
     _update : function (){
         
         /*XXX:This kind of update method needs to be modify
         * since it just simply runs command in mainloop
-        * we need higher library to  make this done
+        * we need higher library to make this done
         */
-        this.status = Status.OUT; //First guess
-        
-        for( let i in this._jackNumIDList){
-        
-                if ( this.blackList.indexOf(this._jackNumIDList[i].id) == -1 && GLib.spawn_command_line_sync(this._jackNumIDList[i].command)[1].toString().lastIndexOf(ONFlag) >= 0 ){
-                    this.status = Status.IN;
-                    this.id = this._jackNumIDList[i].id;
-                    break; //there is no different if more than 1 jack plugged.
-                }
-        }
-        
-        if (this._oldStatus != this.status){
-        
-            this._changeLoopID();
-            this._oldStatus = this.status;
-            this.emit('status-changed');
+        try {
+            for( let i in this._updateList){
             
+                    if ( GLib.spawn_command_line_sync(this._updateList[i].command)[1].toString().lastIndexOf(ONFlag) >= 0 ){
+                        this.status = Status.IN;
+                        this.id = this._jackNumIDList[i].id;
+                        break; //there is no different if more than 1 jack plugged.
+                    }
+                    
+            }
+            if (this._oldStatus != this.status){
+            
+                this._changeLoopID();
+                this._oldStatus = this.status;
+                this.emit('status-changed');
+
+            }
+            return true;
+        }
+        catch(e){
+            throw new Error('[HeadPhone Jack]'+e.message);
+            return false; // for mainloop
         }
         
-        return true; // for mainloop
     },
     _changeLoopID : function (){
 
         try {
-            let smart_high_sensitive_timeout;
             
-            if (this.blackList.length > 0){
-                //More jacks been blacklisted, extension response more quicker
-                smart_high_sensitive_timeout = Math.min(Math.max(90,(this._jackNumIDList.length-this.blackList.length)*100),HIGH_SENSITIVE_TIMEOUT);
-                //90< H <250
-            }
-            
-            this._loopInterval = (this.status == Status.IN)?smart_high_sensitive_timeout:LOW_SENSITIVE_TIMEOUT;
+            this._loopInterval = (this.status == Status.IN)?HIGH_SENSITIVE_TIMEOUT:LOW_SENSITIVE_TIMEOUT;
             
             Mainloop.source_remove(this._mainLoopID);
-
             this._mainLoopID = Mainloop.timeout_add(this._loopInterval, Lang.bind(this, this._update));
+            
+            return true;
         }
         catch(e){
-            throw new Error('HeadPhone:'+e.message);
+            throw new Error('[HeadPhone Jack]'+e.message);
+            return false;
         }
     },
     destroy : function (){
@@ -164,7 +188,6 @@ const HeadPhoneJack = new Lang.Class({
         
         Mainloop.source_remove(this._mainLoopID);
         this._settings.disconnect(this._settingSiganlID);
-        //this.blackList.destroy();
     }
 });
 Signals.addSignalMethods(HeadPhoneJack.prototype);

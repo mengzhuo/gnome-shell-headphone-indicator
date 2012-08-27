@@ -100,10 +100,10 @@ const Media2Server = new Lang.Class({
 
             for (var index in SupportPlayer){
                 this._phonyProxy[index] = new Gio.DBusProxy({ g_connection: Gio.DBus.session,
-			                                                   g_interface_name: Media2ServerInfo.name,
-			                                                   g_interface_info: Media2ServerInfo,
-			                                                   g_name: BUS_NAME+SupportPlayer[index],
-			                                                   g_object_path: BUS_PATH,
+                                                               g_interface_name: Media2ServerInfo.name,
+                                                               g_interface_info: Media2ServerInfo,
+                                                               g_name: BUS_NAME+SupportPlayer[index],
+                                                               g_object_path: BUS_PATH,
                                                                g_flags: (Gio.DBusProxyFlags.DO_NOT_AUTO_START) });
                 this._phonyProxy[index].init(null);
                 

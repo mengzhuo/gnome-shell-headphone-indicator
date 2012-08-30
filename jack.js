@@ -125,7 +125,7 @@ const HeadPhoneJack = new Lang.Class({
             this._updateList = new Array;
             for (let i in this._jackNumIDList){
                 if ( this.blackList.indexOf(this._jackNumIDList[i].id) == -1){
-                    this._updateList.push(this._jackNumIDList[i].id);
+                    this._updateList.push(this._jackNumIDList[i]);
                 }
             }
         }

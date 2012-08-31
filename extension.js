@@ -36,6 +36,9 @@ const Status = {
     OUT: 2,
     UNKNOWN: 3
 };
+const GNOME_OPEN = 'gnome-open %s';
+const EXTEN_HOME_URL = 'http://mengzhuo.org/lab/ubuntu/headphone-indicator#faq';
+//TODO need to write about it.
 
 const Indicator = new Lang.Class({
     
@@ -82,13 +85,39 @@ const Indicator = new Lang.Class({
             }
 
             this._controlFlag = false;
-
+            this._needUpdateMenu = [];
+            this._addMenu();
+            this.updateMenu();
+            this.connect('destroy', Lang.bind(this, this._onDestroy));
         }
-        this._needUpdateMenu = [];
-        this._addMenu();
-        this.updateMenu();
-        this.connect('destroy', Lang.bind(this, this._onDestroy));
+        else{
+            let title = new PopupMenu.PopupMenuItem(_("Something bad happend"), { reactive: false });
+            this.menu.addMenuItem(title);
         
+            let item = new PopupMenu.PopupMenuItem(_("Click for more information"), { reactive: true });
+            item.connect('button-press-event', function(){
+                Main.Util.trySpawnCommandLine(GNOME_OPEN.format(EXTEN_HOME_URL));
+            });
+            this.menu.addMenuItem(item);
+            
+            let logItem = new PopupMenu.PopupMenuItem(_("Make a log for the stupid author"), {reactive:true});
+            
+            logItem.connect('button-press-event', function(){
+                Main.Util.trySpawnCommandLine('amixer -c0 contents > ~/amixer.log');
+                Main.Util.trySpawnCommandLine('cat /proc/asound/card0/codec#0 > ~/asound.log');
+                Main.Util.trySpawnCommandLine('zip ~/headphone ~/amixer.log ~/asound.log'); // zip used for unzip in extension system
+                Main.Utile.trySpawnCommandLine('rm ~/amixer.log ~/asound.log');
+            });
+            this.menu.addMenuItem(logItem);
+            
+            let warningIcon = new St.Icon({ icon_type: St.IconType.SYMBOLIC,
+                                             style_class: 'popup-menu-icon',
+                                             icon_name: 'dialog-warning'
+            });
+            
+            this._icon = warningIcon;
+            this.actor.show();
+        }
     },
     _statusChanged : function ()
     {

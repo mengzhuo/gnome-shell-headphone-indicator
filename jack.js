@@ -101,7 +101,7 @@ const HeadPhoneJack = new Lang.Class({
                 
             }
 
-            if (this._jackNumIDList.length == 0)
+            if (this._jackNumIDList.length < 1)
                 throw new Error('No Jack port founded');
             
             delete this._cardDevices; // save some RAM 
@@ -116,7 +116,7 @@ const HeadPhoneJack = new Lang.Class({
         }
         catch(e) {
             this.status = Status.NONEXIST;
-            throw new Error('HeadPhone Initializing Error: '+ e.message);
+            global.log('[HeadPhone Jack Initialization]: '+ e.message);
         }
     },
     _onSettingsChanged : function (){
@@ -130,7 +130,7 @@ const HeadPhoneJack = new Lang.Class({
             }
         }
         catch(e){
-            throw new Error('[HeadPhone Jack]'+e.message);
+            global.log('[HeadPhone Jack -> onSettingsChanged]'+e.message);
         }
     },
     _update : function (){
@@ -141,25 +141,23 @@ const HeadPhoneJack = new Lang.Class({
         */
         try {
             for( let i in this._updateList){
-            
                     if ( GLib.spawn_command_line_sync(this._updateList[i].command)[1].toString().lastIndexOf(ONFlag) >= 0 ){
                         this.status = Status.IN;
                         this.id = this._jackNumIDList[i].id;
                         break; //there is no different if more than 1 jack plugged.
                     }
-                    
             }
             if (this._oldStatus != this.status){
             
                 this._changeLoopID();
                 this._oldStatus = this.status;
                 this.emit('status-changed');
-
             }
             return true;
         }
         catch(e){
-            throw new Error('[HeadPhone Jack]'+e.message);
+            global.log('[HeadPhone Jack -> update]'+e.message);
+            
             return false; // for mainloop
         }
         
@@ -169,14 +167,14 @@ const HeadPhoneJack = new Lang.Class({
         try {
             
             this._loopInterval = (this.status == Status.IN)?HIGH_SENSITIVE_TIMEOUT:LOW_SENSITIVE_TIMEOUT;
-            
             Mainloop.source_remove(this._mainLoopID);
             this._mainLoopID = Mainloop.timeout_add(this._loopInterval, Lang.bind(this, this._update));
             
             return true;
         }
         catch(e){
-            throw new Error('[HeadPhone Jack]'+e.message);
+            global.log('[HeadPhone Jack -> changeLoopID]'+e.message);
+            
             return false;
         }
     },

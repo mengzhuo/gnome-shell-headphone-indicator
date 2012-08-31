@@ -23,7 +23,7 @@ const Mainloop = imports.mainloop;
 const Extension = imports.misc.extensionUtils.getCurrentExtension();
 const Util = Extension.imports.util;
 
-const HIGH_SENSITIVE_TIMEOUT = 250;
+const HIGH_SENSITIVE_TIMEOUT = 150;
 const LOW_SENSITIVE_TIMEOUT  = 1500; //pulgged is not an urgent task. 
 
 const CardInfoCommandLine = 'amixer -c0 contents'; // XXX: on card 1 since most of laptop has only one sound card.
@@ -140,6 +140,9 @@ const HeadPhoneJack = new Lang.Class({
         * we need higher library to make this done
         */
         try {
+        
+            this.status = Status.OUT;
+            
             for( let i in this._updateList){
                     if ( GLib.spawn_command_line_sync(this._updateList[i].command)[1].toString().lastIndexOf(ONFlag) >= 0 ){
                         this.status = Status.IN;
@@ -157,25 +160,20 @@ const HeadPhoneJack = new Lang.Class({
         }
         catch(e){
             global.log('[HeadPhone Jack -> update]'+e.message);
-            
             return false; // for mainloop
         }
-        
     },
     _changeLoopID : function (){
 
         try {
             
-            this._loopInterval = (this.status == Status.IN)?HIGH_SENSITIVE_TIMEOUT:LOW_SENSITIVE_TIMEOUT;
+            this._loopInterval = (this.status == Status.IN)?Math.min(HIGH_SENSITIVE_TIMEOUT*this._updateList.length,300):LOW_SENSITIVE_TIMEOUT;
             Mainloop.source_remove(this._mainLoopID);
             this._mainLoopID = Mainloop.timeout_add(this._loopInterval, Lang.bind(this, this._update));
-            
-            return true;
+
         }
         catch(e){
             global.log('[HeadPhone Jack -> changeLoopID]'+e.message);
-            
-            return false;
         }
     },
     destroy : function (){

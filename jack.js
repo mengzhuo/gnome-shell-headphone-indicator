@@ -143,7 +143,7 @@ const HeadPhoneJack = new Lang.Class({
             for( let i in this._updateList){
                     if ( GLib.spawn_command_line_sync(this._updateList[i].command)[1].toString().lastIndexOf(ONFlag) >= 0 ){
                         this.status = Status.IN;
-                        this.id = this._jackNumIDList[i].id;
+                        this.id = this._updateList[i].id;
                         break; //there is no different if more than 1 jack plugged.
                     }
             }

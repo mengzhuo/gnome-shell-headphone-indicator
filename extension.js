@@ -72,8 +72,7 @@ const Indicator = new Lang.Class({
             if (!iconTheme.has_icon('headphone-indicator'))
                 iconTheme.append_search_path (Extension.dir.get_path()+'/icons');
                         
-            this._icon = new St.Icon({ icon_type: St.IconType.SYMBOLIC,
-                                        style_class: 'popup-menu-icon',
+            this._icon = new St.Icon({ style_class: 'popup-menu-icon',
                                         icon_name: 'headphone-indicator',
                                         });
             
@@ -89,8 +88,7 @@ const Indicator = new Lang.Class({
             this._addMenu();
             this.updateMenu();
             this.connect('destroy', Lang.bind(this, this._onDestroy));
-        }
-        else{
+        } else {
             let title = new PopupMenu.PopupMenuItem(_("Something bad happend"), { reactive: false });
             this.menu.addMenuItem(title);
         
@@ -110,7 +108,7 @@ const Indicator = new Lang.Class({
             });
             this.menu.addMenuItem(logItem);
             
-            let warningIcon = new St.Icon({ icon_type: St.IconType.SYMBOLIC,
+            let warningIcon = new St.Icon({
                                              style_class: 'popup-menu-icon',
                                              icon_name: 'dialog-warning'
             });
@@ -131,8 +129,7 @@ const Indicator = new Lang.Class({
                 this._player.play();
                 
             }
-        }
-        else{
+        } else {
             
             this.actor.hide();
             
@@ -149,8 +146,7 @@ const Indicator = new Lang.Class({
         for (let i in this._needUpdateMenu){
             if (this._needUpdateMenu[i].id == this._jack.id){
                 this._needUpdateMenu[i].actor.add_style_class_name('plugged');
-            }
-            else{
+            } else {
                 this._needUpdateMenu[i].actor.remove_style_class_name('plugged');
             }
         }
@@ -174,8 +170,7 @@ const Indicator = new Lang.Class({
                 
                 if (item.state && this.blackList.indexOf(item.id) > -1){
                     this.blackList.splice(this.blackList.indexOf(item.id),1);
-                }
-                else if (!item.state && this.blackList.indexOf(item.id) == -1){
+                } else if (!item.state && this.blackList.indexOf(item.id) == -1){
                     this.blackList.push(item.id);
                 }
                      

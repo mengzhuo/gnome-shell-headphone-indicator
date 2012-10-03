@@ -46,8 +46,8 @@ const Indicator = new Lang.Class({
     
     Extends: PanelMenu.Button,
     
-    _init : function()
-    {
+    _init : function(){
+    
         this.parent(St.Align.START);
         
         this._jack = new Jack.HeadPhoneJack();
@@ -108,8 +108,7 @@ const Indicator = new Lang.Class({
             });
             this.menu.addMenuItem(logItem);
             
-            let warningIcon = new St.Icon({
-                                             style_class: 'popup-menu-icon',
+            let warningIcon = new St.Icon({  style_class: 'popup-menu-icon',
                                              icon_name: 'dialog-warning'
             });
             
@@ -117,8 +116,7 @@ const Indicator = new Lang.Class({
             this.actor.show();
         }
     },
-    _statusChanged : function ()
-    {
+    _statusChanged : function (){
 
         if (this._jack.status == Status.IN){
             
@@ -173,7 +171,7 @@ const Indicator = new Lang.Class({
                 } else if (!item.state && this.blackList.indexOf(item.id) == -1){
                     this.blackList.push(item.id);
                 }
-                     
+                
                 this._settings.set_strv(BLACK_LIST_KEY_NAME,this.blackList);
             }));
             this._needUpdateMenu.push(_switch);
@@ -187,22 +185,20 @@ const Indicator = new Lang.Class({
         this.actor.hide();
         this._jack.destroy();
         this._player.destroy();
+        delete Main.panel.statusArea.HeadPhoneIndicator
     }
 });
 
-let indicator;
-
 function enable() {
-    if (!indicator) {
+    if (typeof Main.panel.statusArea.HeadPhoneIndicator === 'undefined') {
         indicator = new Indicator();
         Main.panel.addToStatusArea('HeadPhoneIndicator', indicator);
     }
 }
 
 function disable() {
-    if (indicator) {
-        indicator.destroy();
-        indicator = null;
+    if (typeof Main.panel.statusArea.HeadPhoneIndicator != 'undefined') {
+        Main.panel.statusArea.HeadPhoneIndicator.destroy();
     }
 }
 function init(metadata) {

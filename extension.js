@@ -14,6 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+// Part of the code(Dbus-control) from extension mediaplayer@patapon.info
 
 const Main = imports.ui.main;
 const PanelMenu = imports.ui.panelMenu;
@@ -24,7 +25,7 @@ const Gtk = imports.gi.Gtk;
 const Gio = imports.gi.Gio;
 const Extension = imports.misc.extensionUtils.getCurrentExtension();
 const Jack = Extension.imports.jack;
-const DBusIFace = Extension.imports.dbus;
+const DBusIface = Extension.imports.dbus;
 const Util = Extension.imports.util;
 
 const Gettext = imports.gettext.domain('headphone-indicator');
@@ -36,9 +37,32 @@ const Status = {
     OUT: 2,
     UNKNOWN: 3
 };
-const GNOME_OPEN = 'gnome-open %s';
-const EXTEN_HOME_URL = 'http://mengzhuo.org/lab/ubuntu/headphone-indicator#faq';
-//TODO need to write about it.
+
+const MusicPlayer = new Lang.Class({
+    
+    Name: "MusicPlayer",
+    
+    _init : function(busName, owner){
+
+        this._owner = owner;
+        this._busName = busName;
+        this._mediaServerPlayer = new DBusIface.MediaServer2Player(busName);
+
+    },
+    
+    get status(){
+        return this._mediaServerPlayer.PlaybackStatus;
+    },
+    
+    play : function(){
+         this._mediaServerPlayer.PlayRemote();
+    },
+    
+    pause : function(){ 
+        this._mediaServerPlayer.PauseRemote();
+    },
+    
+})
 
 const Indicator = new Lang.Class({
     
@@ -48,9 +72,43 @@ const Indicator = new Lang.Class({
     
     _init : function(){
     
-        this.parent(St.Align.START);
+        this.parent();
         
         this._jack = new Jack.HeadPhoneJack();
+        // players list
+        this._players = {};
+        // the DBus interface
+        this._dbus = new DBusIface.DBus();
+        // player DBus name pattern
+        let name_regex = /^org\.mpris\.MediaPlayer2\./;
+        // load players
+        this._dbus.ListNamesRemote(Lang.bind(this,
+            function(names) {
+                for (n in names[0]) {
+                    let name = names[0][n];
+                    if (name_regex.test(name)) {
+                        this._dbus.GetNameOwnerRemote(name, Lang.bind(this,
+                            function(owner) {
+                                this._addPlayer(name, owner);
+                            }
+                        ));
+                    }
+                }
+            }
+        ));
+        // watch players
+        this._dbus.connectSignal('NameOwnerChanged', Lang.bind(this,
+            function(proxy, sender, [name, old_owner, new_owner]) {
+                if (name_regex.test(name)) {
+                    if (new_owner && !old_owner)
+                        this._addPlayer(name, new_owner);
+                    else if (old_owner && !new_owner)
+                        this._removePlayer(name, old_owner);
+                    else
+                        this._changePlayerOwner(name, old_owner, new_owner);
+                }
+            }
+        ));
         
         this._settings = this._jack._settings;
         this.blackList = this._jack.blackList;
@@ -62,15 +120,12 @@ const Indicator = new Lang.Class({
             this._jack.connect('status-changed',Lang.bind(this,this._statusChanged));
             
             this.jackList = this._jack._jackNumIDList;
-            
-            //connect to dbus 
-            this._player = new DBusIFace.Media2Server();
   
             //icon stuff
             let iconTheme = Gtk.IconTheme.get_default();
             
             if (!iconTheme.has_icon('headphone-indicator'))
-                iconTheme.append_search_path (Extension.dir.get_path()+'/icons');
+                iconTheme.append_search_path ('%s/icons'.format(Extension.dir.get_path()) );
                         
             this._icon = new St.Icon({ style_class: 'popup-menu-icon',
                                         icon_name: 'headphone-indicator',
@@ -89,51 +144,63 @@ const Indicator = new Lang.Class({
             this.updateMenu();
             this.connect('destroy', Lang.bind(this, this._onDestroy));
         } else {
-            let title = new PopupMenu.PopupMenuItem(_("Something bad happend"), { reactive: false });
-            this.menu.addMenuItem(title);
-        
-            let item = new PopupMenu.PopupMenuItem(_("Click for more information"), { reactive: true });
-            item.connect('button-press-event', function(){
-                Main.Util.trySpawnCommandLine(GNOME_OPEN.format(EXTEN_HOME_URL));
-            });
-            this.menu.addMenuItem(item);
-            
-            let logItem = new PopupMenu.PopupMenuItem(_("Make a log for the stupid author"), {reactive:true});
-            
-            logItem.connect('button-press-event', function(){
-                Main.Util.trySpawnCommandLine('amixer -c0 contents > ~/amixer.log');
-                Main.Util.trySpawnCommandLine('cat /proc/asound/card0/codec#0 > ~/asound.log');
-                Main.Util.trySpawnCommandLine('zip ~/headphone ~/amixer.log ~/asound.log'); // zip used for unzip in extension system
-                Main.Utile.trySpawnCommandLine('rm ~/amixer.log ~/asound.log');
-            });
-            this.menu.addMenuItem(logItem);
-            
-            let warningIcon = new St.Icon({  style_class: 'popup-menu-icon',
-                                             icon_name: 'dialog-warning'
-            });
-            
-            this._icon = warningIcon;
-            this.actor.show();
+            global.log('Sound card detection error')
         }
     },
-    _statusChanged : function (){
+    
+    // TODO: move to proper place
+    _isInstance: function(busName) {
+        // MPRIS instances are in the form
+        // org.mpris.MediaPlayer2.name.instanceXXXX
+        return busName.split('.').length > 4;
+    },
+    _addPlayer: function(busName, owner) {
 
+        if (this._players[owner]) {
+            let prevName = this._players[owner]._busName;
+            // HAVE:       ADDING:     ACTION:
+            // master      master      reject, cannot happen
+            // master      instance    upgrade to instance
+            // instance    master      reject, duplicate
+            // instance    instance    reject, cannot happen
+            if (this._isInstance(busName) && !this._isInstance(prevName))
+                this._players[owner]._busName = busName;
+            else
+                return;
+        } else if (owner) {
+            this._players[owner] = {player: new MusicPlayer(busName, owner)};
+        }
+    },
+
+    _removePlayer: function(busName, owner) {
+        if (this._players[owner]) {
+            delete this._players[owner];
+        }
+    },
+    _changePlayerOwner: function(busName, oldOwner, newOwner) {
+        if (this._players[oldOwner]) {
+            this._players[newOwner] = this._players[oldOwner];
+            delete this._players[oldOwner];
+        }
+    },
+    
+    _statusChanged : function (){
+        
         if (this._jack.status == Status.IN){
-            
             this.actor.show();
-            
-            if (this._player.getPlaybackStatus() == 'Paused' && this._controlFlag){
-                
-                this._player.play();
-                
+            for (let owner in this._players) {
+                if (this._players[owner].player.status == 'Paused' && this._controlFlag)
+                    this._players[owner].player.play();
             }
+            
         } else {
-            
+        
             this.actor.hide();
-            
-            if (this._player.getPlaybackStatus() == 'Playing'){
-                this._player.pause();
-                this._controlFlag = true;
+            for (let owner in this._players) {
+                if (this._players[owner].player.status == 'Playing'){
+                    this._players[owner].player.pause();
+                    this._controlFlag = true;
+                }
             }
 
         }
@@ -155,7 +222,6 @@ const Indicator = new Lang.Class({
         this.menu.addMenuItem(item);
         
         for (let i in this.jackList){
-            
             let flag = (this.blackList.indexOf( this.jackList[i].id ) == -1)?true:false;
             let _switch = new PopupMenu.PopupSwitchMenuItem('%s : %s'.format(
                                                    this.jackList[i].id,
@@ -184,15 +250,15 @@ const Indicator = new Lang.Class({
     _onDestroy: function() {
         this.actor.hide();
         this._jack.destroy();
-        this._player.destroy();
+        this.actor.destroy();
         delete Main.panel.statusArea.HeadPhoneIndicator
     }
 });
 
 function enable() {
-    if (typeof Main.panel.statusArea.HeadPhoneIndicator === 'undefined') {
-        indicator = new Indicator();
-        Main.panel.addToStatusArea('HeadPhoneIndicator', indicator);
+    if (typeof Main.panel.statusArea.HeadPhoneIndicator == 'undefined') {
+        let indicator = new Indicator();
+        Main.panel.addToStatusArea('HeadPhoneIndicator', indicator, 1, 'right');
     }
 }
 

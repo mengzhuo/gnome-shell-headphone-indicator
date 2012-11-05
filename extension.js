@@ -72,7 +72,7 @@ const Indicator = new Lang.Class({
     
     _init : function(){
     
-        this.parent();
+        this.parent(St.Align.START);
         
         this._jack = new Jack.HeadPhoneJack();
         // players list

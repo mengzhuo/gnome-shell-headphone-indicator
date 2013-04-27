@@ -15,28 +15,18 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 // Part of the code(Dbus-control) from extension mediaplayer@patapon.info
+const HEAD_PHONE_MONITOR_NAME = 'headphone-indicator';
+const UNDEFINED = 'undefined';
+const MINT_GREEN = '#7CD53A';
+const ICON_COLOR_KEY = 'icon-color';
+const COLOR_REGEX = /^#[\dA-Fa-f]{6}$/i;
 
 const Main = imports.ui.main;
-const PanelMenu = imports.ui.panelMenu;
-const PopupMenu = imports.ui.popupMenu;
-const Lang = imports.lang;
 const St = imports.gi.St;
-const Gtk = imports.gi.Gtk;
-const Gio = imports.gi.Gio;
+const Lang = imports.lang;
 const Extension = imports.misc.extensionUtils.getCurrentExtension();
-const Jack = Extension.imports.jack;
 const DBusIface = Extension.imports.dbus;
 const Util = Extension.imports.util;
-
-const Gettext = imports.gettext.domain('headphone-indicator');
-const _ = Gettext.gettext;
-const BLACK_LIST_KEY_NAME = 'blacklist';
-const Status = {
-    NONEXIST: 0,
-    IN: 1,
-    OUT: 2,
-    UNKNOWN: 3
-};
 
 const MusicPlayer = new Lang.Class({
     
@@ -47,7 +37,6 @@ const MusicPlayer = new Lang.Class({
         this._owner = owner;
         this._busName = busName;
         this._mediaServerPlayer = new DBusIface.MediaServer2Player(busName);
-
     },
     
     get status(){
@@ -61,20 +50,47 @@ const MusicPlayer = new Lang.Class({
     pause : function(){ 
         this._mediaServerPlayer.PauseRemote();
     },
+    toggle: function(){
+        // we dont depend on remote Dbus system toggle, as it is not fully
+        // controlled by us.
+        if (this.status){
+            this.pause();
+        } else {
+            this.play();
+        }
+    }
     
 })
 
-const Indicator = new Lang.Class({
+const HeadPhoneMonitor = new Lang.Class({
     
-    Name: 'HeadPhoneIndicator',
-    
-    Extends: PanelMenu.Button,
+    Name: HEAD_PHONE_MONITOR_NAME,
     
     _init : function(){
     
-        this.parent(St.Align.START);
+        // append to volume
+        this._delegate = Main.panel.statusArea.volume;
+        this._control = this._delegate._control;
+        Main.panel.statusArea.volume._monitor = this;
+
+        // monitor headphone signal
+        this._monitorSignalID = this._delegate._volumeMenu.connect('headphones-changed', 
+                                            Lang.bind(this, 
+                                                      this._statusChanged));
+        this._iconColor = MINT_GREEN;
+
+        // settings
+        this._settings = Util.getSettings('org.gnome.shell.extensions.headphone-indicator');
+        this._settingsSignalID = this._settings.connect('changed', Lang.bind(this, this._onSettingsChanged));
+        this._onSettingsChanged();
+
+
+        //shows we controlled this headphone
+        this._delegate._headphoneIcon.set_style(
+                            'color:%s'.format(this._iconColor));
         
-        this._jack = new Jack.HeadPhoneJack();
+        // anything playing
+        this.playing = false;
         // players list
         this._players = {};
         // the DBus interface
@@ -109,51 +125,7 @@ const Indicator = new Lang.Class({
                 }
             }
         ));
-        
-        this._settings = this._jack._settings;
-        this.blackList = this._jack.blackList;
-        
-        this.actor.hide();
-        
-        if (this._jack.status != Status.NONEXIST){// We have sound card!
-            //connect to change
-            this._jack.connect('status-changed',Lang.bind(this,this._statusChanged));
-            
-            this.jackList = this._jack._jackNumIDList;
-  
-            //icon stuff
-            let iconTheme = Gtk.IconTheme.get_default();
-            
-            if (!iconTheme.has_icon('headphone-indicator'))
-                iconTheme.append_search_path ('%s/icons'.format(Extension.dir.get_path()) );
-                        
-            this._icon = new St.Icon({ style_class: 'popup-menu-icon',
-                                        icon_name: 'headphone-indicator',
-                                        });
-            
-            this.actor.add_actor(this._icon);
-            
-            if (this._jack.status == Status.IN){
-            
-                this.actor.show();
-            }
-
-            this._controlFlag = false;
-            this._needUpdateMenu = [];
-            this._addMenu();
-            this.updateMenu();
-            this.connect('destroy', Lang.bind(this, this._onDestroy));
-        } else {
-            global.log('Sound card detection error')
-        }
-    },
-    
-    // TODO: move to proper place
-    _isInstance: function(busName) {
-        // MPRIS instances are in the form
-        // org.mpris.MediaPlayer2.name.instanceXXXX
-        return busName.split('.').length > 4;
-    },
+    }, 
     _addPlayer: function(busName, owner) {
 
         if (this._players[owner]) {
@@ -184,89 +156,60 @@ const Indicator = new Lang.Class({
         }
     },
     
-    _statusChanged : function (){
-        
-        if (this._jack.status == Status.IN){
-            this.actor.show();
-            for (let owner in this._players) {
-                if (this._players[owner].player.status == 'Paused' && this._controlFlag)
-                    this._players[owner].player.play();
-            }
-            
-        } else {
-        
-            this.actor.hide();
-            for (let owner in this._players) {
-                if (this._players[owner].player.status == 'Playing'){
-                    this._players[owner].player.pause();
-                    this._controlFlag = true;
-                }
-            }
+    _statusChanged : function (menu, value){
 
-        }
-        this.updateMenu();
-        return true;
-    },
-    updateMenu : function (){
-        for (let i in this._needUpdateMenu){
-            if (this._needUpdateMenu[i].id == this._jack.id){
-                this._needUpdateMenu[i].actor.add_style_class_name('plugged');
-            } else {
-                this._needUpdateMenu[i].actor.remove_style_class_name('plugged');
+        for(let owner in this._players){
+            let player = this._players[owner].player
+            //  
+            //          OUT     IN
+            //  Playing pause   skip
+            //  Paused  skip    start
+            //
+            if (player.status == "Paused" && value){
+                player.play();
+            } else if (player.status == "Playing" && ! value){
+                player.pause();
             }
         }
     },
-    _addMenu : function (){
+    _onSettingsChanged : function(){
+        icon_color = this._settings.get_string(ICON_COLOR_KEY);
+        if (!COLOR_REGEX.test(icon_color)){
+            global.log(icon_color);
+            global.log(COLOR_REGEX.test(icon_color));
+            this._settings.set_string(ICON_COLOR_KEY, MINT_GREEN);
         
-        let item = new PopupMenu.PopupMenuItem(_("Monitored Headphone Jack"), { reactive: false });
-        this.menu.addMenuItem(item);
-        
-        for (let i in this.jackList){
-            let flag = (this.blackList.indexOf( this.jackList[i].id ) == -1)?true:false;
-            let _switch = new PopupMenu.PopupSwitchMenuItem('%s : %s'.format(
-                                                   this.jackList[i].id,
-                                                   this.jackList[i].description),flag);
-            _switch.id = this.jackList[i].id;
-            
-            _switch.connect('toggled', Lang.bind(this, function(item) {
-                
-                this.blackList = this._settings.get_strv(BLACK_LIST_KEY_NAME);
-                
-                if (item.state && this.blackList.indexOf(item.id) > -1){
-                    this.blackList.splice(this.blackList.indexOf(item.id),1);
-                } else if (!item.state && this.blackList.indexOf(item.id) == -1){
-                    this.blackList.push(item.id);
-                }
-                
-                this._settings.set_strv(BLACK_LIST_KEY_NAME,this.blackList);
-            }));
-            this._needUpdateMenu.push(_switch);
-            this.menu.addMenuItem(_switch);
         }
+        this._iconColor = this._settings.get_string(ICON_COLOR_KEY);
+        this._delegate._headphoneIcon.set_style(
+                            'color:%s'.format(this._iconColor));
+    
     },
     destroy : function () {
         this._onDestroy();
     },
     _onDestroy: function() {
-        this.actor.hide();
-        this._jack.destroy();
-        this.actor.destroy();
-        delete Main.panel.statusArea.HeadPhoneIndicator
+        //
+        this._delegate._headphoneIcon.set_style('color:');
+        this._delegate._volumeMenu.disconnect(this._monitorSignalID);
     }
 });
 
 function enable() {
-    if (typeof Main.panel.statusArea.HeadPhoneIndicator == 'undefined') {
-        let indicator = new Indicator();
-        Main.panel.addToStatusArea('HeadPhoneIndicator', indicator, 1, 'right');
+    if (typeof Main.panel.statusArea.volume != UNDEFINED) {
+        let headPhoneMonitor = new HeadPhoneMonitor();
     }
 }
 
 function disable() {
-    if (typeof Main.panel.statusArea.HeadPhoneIndicator != 'undefined') {
-        Main.panel.statusArea.HeadPhoneIndicator.destroy();
+    if (typeof Main.panel.statusArea.volume != UNDEFINED ) {
+        try{
+            headPhoneMonitor.destroy();
+        } catch(e) {
+            global.logError(e)
+        }
     }
 }
 function init(metadata) {
-    Util.initTranslations('headphone-indicator');
+    global.log("%s....[ OK ]".format(HEAD_PHONE_MONITOR_NAME));
 }

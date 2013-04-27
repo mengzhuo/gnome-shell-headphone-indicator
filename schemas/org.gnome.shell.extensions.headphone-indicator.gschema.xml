@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <schemalist>
-  <schema path="/org/gnome/shell/extensions/headphone-indicator/" id="org.gnome.shell.extensions.headphone-indicator">
-    <key type="as" name="blacklist">
-      <default>[ ]</default>
-      <summary>Blacklist for headphone jack</summary>
-      <description>Blacklist for headphone jack</description>
-    </key>
-  </schema>
+<schema path="/org/gnome/shell/extensions/headphone-indicator/" id="org.gnome.shell.extensions.headphone-indicator">
+<key type="s" name="icon-color">
+    <default>'#7CD53A'</default>
+    <_summary>In HEX format</_summary>
+    <_description>Indicator Icon Color</_description>
+</key>
+</schema>
 </schemalist>

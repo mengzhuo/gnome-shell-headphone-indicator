@@ -1,8 +1,8 @@
 {
  "uuid": "headphone-indicator@mengzhuo.org",
- "shell-version": ["3.6"],
- "name": "Headphone Indicator",
+ "shell-version": ["3.8"],
+ "name": "Headphone Event",
  "url":  "http://mengzhuo.org/lab/ubuntu/headphone-indicator.html",
- "description": "Indicator for headphone status and this will auto mute playing songs\nwhile headphone got unplug by accident\nToggles in the menu shows how many Jacks do your computer had.\nIndicator won't monitor the jack port if you switch toggle off.",
+ "description": "PAUSE playing songs or execute command you wish when headphone get unplugged.",
  "settings-schema":"org.gnome.shell.extensions.headphone-indicator"
 }

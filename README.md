@@ -1,27 +1,19 @@
-# HeadPhone-indicator extension for gnome-shell
-- Indicate Headphone status in Gnome-shell panel
+# HeadPhone-event extension for gnome-shell
 - Pause music player (Rhythmbox,Banshee etc.) while headphone un-plunged and player is playing
 
+# How to change icon color
+1. open dconf-editor
+2. goto org.gnome.shell.extensions.headphone-indicator
+3. change icon-color into the color you want (in HEX, i.e. #1AC9FF)
 
 # Dependencies
-- Gnome-shell 3.4 (Our [0.1 release] supported gnome-shell <= 3.2)
-- amixer
+- Gnome-shell >=3.8
 
 # Installation
-## Web based (recommended)
 https://extensions.gnome.org/extension/316/headphone-indicator/
-
-## Direct from source
-- Get zipball 
-    * [Stable | Gnome-shell >= 3.4](https://github.com/mengzhuo/gnome-shell-headphone-indicator/zipball/0.6)
-    * [Unstable - Master branch](https://github.com/mengzhuo/gnome-shell-headphone-indicator/zipball/master)
-
-# Usage
-- Just relax
 
 # License
 GPL3. See COPYING for details.
-All Icons copyright reserved.
 
 # Thanks
 - Contributors: https://github.com/mengzhuo/gnome-shell-headphone-indicator/contributors

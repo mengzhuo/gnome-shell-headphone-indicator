@@ -55,7 +55,8 @@ const MediaServer2PlayerIface = <interface name="org.mpris.MediaPlayer2.Player">
 const MediaServer2PlayerProxy = Gio.DBusProxy.makeProxyWrapper(MediaServer2PlayerIface);
 
 function DBus() {
-    return new DBusProxy(Gio.DBus.session, 'org.freedesktop.DBus',
+    return new DBusProxy(Gio.DBus.session,
+                        'org.freedesktop.DBus',
                          '/org/freedesktop/DBus');
 }
 

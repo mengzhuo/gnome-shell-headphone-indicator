@@ -100,7 +100,7 @@ const HeadPhoneMonitor = new Lang.Class({
         // load players
         this._dbus.ListNamesRemote(Lang.bind(this,
             function(names) {
-                for (n in names[0]) {
+                for (let n in names[0]) {
                     let name = names[0][n];
                     if (name_regex.test(name)) {
                         this._dbus.GetNameOwnerRemote(name, Lang.bind(this,
@@ -173,7 +173,7 @@ const HeadPhoneMonitor = new Lang.Class({
         }
     },
     _onSettingsChanged : function(){
-        icon_color = this._settings.get_string(ICON_COLOR_KEY);
+        let icon_color = this._settings.get_string(ICON_COLOR_KEY);
         if (!COLOR_REGEX.test(icon_color)){
             global.log(icon_color);
             global.log(COLOR_REGEX.test(icon_color));

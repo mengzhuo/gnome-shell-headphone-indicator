@@ -1,6 +1,6 @@
 {
  "uuid": "headphone-indicator@mengzhuo.org",
- "shell-version": ["3.8", '3.10'],
+ "shell-version": ["3.8", "3.10"],
  "name": "Headphone Event",
  "url":  "http://mengzhuo.org/lab/ubuntu/headphone-indicator.html",
  "description": "PAUSE playing songs or execute command you wish when headphone get unplugged.",
